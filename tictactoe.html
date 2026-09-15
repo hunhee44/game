@@ -40,7 +40,6 @@
             background-color: #d1d9e6;
             padding: 15px;
             border-radius: 16px;
-            /* 테두리와 깊은 그림자로 입체적인 틀 표현 */
             box-shadow: 
                 8px 8px 16px #b8c1ec,
                 -8px -8px 16px #ffffff,
@@ -60,8 +59,6 @@
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            
-            /* 타일 입체 그림자 효과 */
             box-shadow: 
                 5px 5px 10px #a3b1c6,
                 -5px -5px 10px #ffffff;
@@ -76,7 +73,6 @@
                 -6px -6px 12px #ffffff;
         }
 
-        /* 클릭했을 때 살짝 파이는 듯한 효과 */
         .cell:active {
             transform: translateY(2px);
             box-shadow: 
@@ -100,28 +96,44 @@
                 3px 3px 5px rgba(0,0,0,0.2);
         }
 
-        /* 입체적인 리셋 버튼 */
-        #reset-btn {
+        /* 하단 버튼 영역 */
+        .controls {
+            display: flex;
+            gap: 12px;
             margin-top: 30px;
-            padding: 12px 28px;
+        }
+
+        .btn {
+            padding: 12px 24px;
             font-size: 1rem;
-            background-color: #4caf50;
+            font-weight: bold;
             color: white;
             border: none;
             border-radius: 10px;
             cursor: pointer;
-            font-weight: bold;
-            box-shadow: 0 5px 0 #388e3c, 0 8px 10px rgba(0,0,0,0.15);
             transition: all 0.1s ease;
+            text-decoration: none;
         }
 
-        #reset-btn:hover {
-            background-color: #43a047;
+        #reset-btn {
+            background-color: #4caf50;
+            box-shadow: 0 5px 0 #388e3c, 0 8px 10px rgba(0,0,0,0.15);
         }
 
         #reset-btn:active {
             transform: translateY(4px);
             box-shadow: 0 1px 0 #388e3c, 0 3px 5px rgba(0,0,0,0.15);
+        }
+
+        .home-btn {
+            background-color: #1890ff;
+            box-shadow: 0 5px 0 #096dd9, 0 8px 10px rgba(0,0,0,0.15);
+            display: inline-block;
+        }
+
+        .home-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #096dd9, 0 3px 5px rgba(0,0,0,0.15);
         }
     </style>
 </head>
@@ -142,7 +154,11 @@
         <div class="cell" data-index="8"></div>
     </div>
 
-    <button id="reset-btn">게임 초기화</button>
+    <!-- 하단 컨트롤 영역 (게임 초기화 및 메인으로 이동 버튼) -->
+    <div class="controls">
+        <button id="reset-btn" class="btn">게임 초기화</button>
+        <a href="index.html" class="btn home-btn">메인으로</a>
+    </div>
 
     <script>
         const board = document.getElementById('board');
