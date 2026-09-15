@@ -26,7 +26,6 @@
             margin-bottom: 15px;
             letter-spacing: 2px;
         }
-        /* 게임 캔버스 스타일 */
         canvas {
             background-color: #ffffff;
             border-bottom: 3px solid #535353;
@@ -62,7 +61,6 @@
 
     <div id="score">00000</div>
     
-    <!-- 해상도를 명시하여 픽셀 그래픽이 뭉개지지 않도록 설정 -->
     <canvas id="gameCanvas" width="600" height="200"></canvas>
 
     <div id="game-over-panel">
@@ -81,6 +79,8 @@
         let score = 0;
         let isGameOver = false;
         let gameSpeed = 5;
+        let cactuses = [];
+        let nextSpawnDistance = 0;
         
         // 공룡 오브젝트
         const dino = {
@@ -92,29 +92,29 @@
             gravity: 0.6,
             jumpStrength: -11,
             isJumping: false,
-            // 2D 캔버스로 그리는 도트 공룡 모양 모양 정의
+            
             draw() {
-                ctx.fillStyle = "#535353"; // 오리지널 크롬 감성의 다크 그레이 색상
+                ctx.fillStyle = "#535353";
                 
                 // 머리와 턱
                 ctx.fillRect(this.x + 20, this.y, 20, 16);
                 ctx.fillRect(this.x + 20, this.y + 12, 14, 4);
-                // 눈 (흰색 픽셀)
+                // 눈
                 ctx.fillStyle = "#ffffff";
                 ctx.fillRect(this.x + 24, this.y + 4, 4, 4);
                 
                 // 몸통과 꼬리
                 ctx.fillStyle = "#535353";
-                ctx.fillRect(this.x + 4, this.y + 12, 20, 20); // 주 몸통
-                ctx.fillRect(this.x, this.y + 16, 4, 12);     // 꼬리 끝
-                ctx.fillRect(this.x + 4, this.y + 28, 4, 4);   // 꼬리 연결부
+                ctx.fillRect(this.x + 4, this.y + 12, 20, 20);
+                ctx.fillRect(this.x, this.y + 16, 4, 12);
+                ctx.fillRect(this.x + 4, this.y + 28, 4, 4);
                 
                 // 팔
                 ctx.fillRect(this.x + 24, this.y + 20, 6, 4);
                 
                 // 다리
-                ctx.fillRect(this.x + 8, this.y + 32, 4, 8);  // 뒷다리
-                ctx.fillRect(this.x + 18, this.y + 32, 4, 8); // 앞다리
+                ctx.fillRect(this.x + 8, this.y + 32, 4, 8);
+                ctx.fillRect(this.x + 18, this.y + 32, 4, 8);
             },
             jump() {
                 if (!this.isJumping && !isGameOver) {
@@ -126,7 +126,6 @@
                 this.velocityY += this.gravity;
                 this.y += this.velocityY;
 
-                // 바닥 착지 감지 (바닥 y 좌표: 160)
                 if (this.y >= 160) {
                     this.y = 160;
                     this.velocityY = 0;
@@ -135,59 +134,112 @@
             }
         };
 
-        // 장애물(선인장) 오브젝트
-        const cactus = {
-            x: 650,
-            y: 150,
-            width: 25,
-            height: 50,
+        // 다양해진 선인장 클래스
+        class Cactus {
+            constructor(x, type) {
+                this.x = x;
+                this.type = type; // 'small', 'medium', 'large'
+                
+                if (type === 'small') {
+                    this.width = 18;
+                    this.height = 32;
+                } else if (type === 'medium') {
+                    this.width = 25;
+                    this.height = 44;
+                } else { // 'large'
+                    this.width = 34;
+                    this.height = 55;
+                }
+                
+                this.y = 200 - this.height; // 바닥 높이에 맞춰 배치
+            }
+
             draw() {
                 ctx.fillStyle = "#535353";
+                const scale = this.height / 50; // 기본 50px 기준 스케일 계산
+
                 // 중앙 기둥
-                ctx.fillRect(this.x + 8, this.y, 9, 50);
+                const mainWidth = Math.max(4, 8 * scale);
+                const mainX = this.x + (this.width - mainWidth) / 2;
+                ctx.fillRect(mainX, this.y, mainWidth, this.height);
+
                 // 왼쪽 가지
-                ctx.fillRect(this.x, this.y + 15, 8, 8);
-                ctx.fillRect(this.x, this.y + 8, 4, 10);
+                const leftArmY = this.y + this.height * 0.3;
+                const leftArmH = Math.max(4, 8 * scale);
+                ctx.fillRect(this.x, leftArmY, mainX - this.x, leftArmH);
+                ctx.fillRect(this.x, leftArmY - (10 * scale), Math.max(3, 4 * scale), 10 * scale);
+
                 // 오른쪽 가지
-                ctx.fillRect(this.x + 17, this.y + 22, 8, 8);
-                ctx.fillRect(this.x + 21, this.y + 12, 4, 14);
-            },
+                const rightArmY = this.y + this.height * 0.45;
+                const rightArmH = Math.max(4, 8 * scale);
+                ctx.fillRect(mainX + mainWidth, rightArmY, (this.x + this.width) - (mainX + mainWidth), rightArmH);
+                ctx.fillRect(this.x + this.width - Math.max(3, 4 * scale), rightArmY - (12 * scale), Math.max(3, 4 * scale), 12 * scale);
+            }
+
             update() {
                 this.x -= gameSpeed;
-                // 화면 밖으로 나가면 오른쪽 끝으로 리셋
-                if (this.x < -this.width) {
-                    this.x = canvas.width + Math.random() * 150; // 리셋 간격을 랜덤하게
+            }
+        }
+
+        // 선인장 생성 관리 함수
+        function handleCactuses() {
+            if (cactuses.length === 0) {
+                spawnCactus(canvas.width + 100);
+            } else {
+                const lastCactus = cactuses[cactuses.length - 1];
+                if (canvas.width - lastCactus.x >= nextSpawnDistance) {
+                    spawnCactus(canvas.width);
                 }
             }
-        };
 
-        // 땅 무늬 그리기 (현실감 추가)
+            for (let i = cactuses.length - 1; i >= 0; i--) {
+                cactuses[i].update();
+                cactuses[i].draw();
+
+                // 화면 밖으로 지나간 선인장 제거
+                if (cactuses[i].x < -cactuses[i].width) {
+                    cactuses.splice(i, 1);
+                }
+            }
+        }
+
+        function spawnCactus(xPos) {
+            const types = ['small', 'medium', 'large'];
+            const randomType = types[Math.floor(Math.random() * types.length)];
+            cactuses.push(new Cactus(xPos, randomType));
+            
+            // 다음 장애물과의 최소/최대 거리 설정 (속도에 비례)
+            nextSpawnDistance = 200 + Math.random() * 200 + (gameSpeed * 10);
+        }
+
+        // 땅 무늬
         function drawGround() {
             ctx.strokeStyle = "#535353";
             ctx.lineWidth = 2;
             
-            // 점선 효과로 움직이는 바닥 느낌 내기
             ctx.beginPath();
             ctx.moveTo(0, 199);
             ctx.lineTo(canvas.width, 199);
             ctx.stroke();
             
-            // 군데군데 땅에 있는 작은 돌/먼지 효과
             ctx.fillStyle = "#e0e0e0";
             ctx.fillRect(100, 192, 10, 2);
             ctx.fillRect(350, 195, 15, 2);
             ctx.fillRect(500, 191, 5, 2);
         }
 
-        // 충돌 체크 알고리즘 AABB
+        // 충돌 체크 (AABB)
         function checkCollision() {
-            if (
-                dino.x < cactus.x + cactus.width &&
-                dino.x + dino.width > cactus.x &&
-                dino.y < cactus.y + cactus.height &&
-                dino.y + dino.height > cactus.y
-            ) {
-                endGame();
+            for (let cactus of cactuses) {
+                if (
+                    dino.x < cactus.x + cactus.width &&
+                    dino.x + dino.width > cactus.x &&
+                    dino.y < cactus.y + cactus.height &&
+                    dino.y + dino.height > cactus.y
+                ) {
+                    endGame();
+                    break;
+                }
             }
         }
 
@@ -198,24 +250,21 @@
             // 1. 화면 비우기
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 2. 오브젝트 업데이트
+            // 2. 오브젝트 업데이트 및 그리기
+            drawGround();
             dino.update();
-            cactus.update();
+            dino.draw();
+            
+            handleCactuses();
 
             // 3. 충돌 검사
             checkCollision();
 
-            // 4. 오브젝트 그리기
-            drawGround();
-            dino.draw();
-            cactus.draw();
-
-            // 점수 증가 및 속도 증가
+            // 점수 및 속도 조절
             score++;
             let paddedScore = String(Math.floor(score / 5)).padStart(5, '0');
             scoreDisplay.textContent = paddedScore;
 
-            // 난이도 상승: 점수가 높을수록 속도가 조금씩 빨라짐
             if (score % 500 === 0 && gameSpeed < 12) {
                 gameSpeed += 0.5;
             }
@@ -228,7 +277,7 @@
             isGameOver = false;
             score = 0;
             gameSpeed = 6;
-            cactus.x = canvas.width + 100;
+            cactuses = [];
             dino.y = 160;
             dino.velocityY = 0;
             dino.isJumping = false;
@@ -243,7 +292,7 @@
             gameOverPanel.style.display = "block";
         }
 
-        // 컨트롤 리스너 (PC 스페이스바)
+        // 키보드 컨트롤
         window.addEventListener("keydown", (e) => {
             if (e.code === "Space") {
                 e.preventDefault();
@@ -252,7 +301,7 @@
             }
         });
 
-        // 컨트롤 리스너 (모바일 터치)
+        // 터치 컨트롤
         window.addEventListener("touchstart", (e) => {
             if (isGameOver) startGame();
             else dino.jump();
