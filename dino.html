@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>도트 공룡 달리기 게임</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f7f7f7;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+            font-family: 'Courier New', Courier, monospace;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        #score {
+            font-size: 28px;
+            font-weight: bold;
+            color: #535353;
+            margin-bottom: 15px;
+            letter-spacing: 2px;
+        }
+        /* 게임 캔버스 스타일 */
+        canvas {
+            background-color: #ffffff;
+            border-bottom: 3px solid #535353;
+            box-shadow: 0 6px 12px rgba(0,0,0,0.08);
+            max-width: 95vw;
+            border-radius: 4px;
+        }
+        #game-over-panel {
+            display: none;
+            position: absolute;
+            top: 45%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 20px;
+            font-weight: bold;
+            color: #535353;
+            text-align: center;
+            background: rgba(255,255,255,0.95);
+            padding: 20px 30px;
+            border-radius: 8px;
+            border: 2px solid #535353;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+        }
+        .instruction {
+            margin-top: 15px;
+            color: #888;
+            font-size: 14px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="score">00000</div>
+    
+    <!-- 해상도를 명시하여 픽셀 그래픽이 뭉개지지 않도록 설정 -->
+    <canvas id="gameCanvas" width="600" height="200"></canvas>
+
+    <div id="game-over-panel">
+        G A M E  O V E R<br>
+        <span style="font-size:14px; color:#888; display:inline-block; margin-top:10px;">터치하거나 스페이스바를 눌러 재시작</span>
+    </div>
+
+    <div class="instruction">PC: 스페이스바 | 모바일: 화면 터치</div>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreDisplay = document.getElementById("score");
+        const gameOverPanel = document.getElementById("game-over-panel");
+
+        let score = 0;
+        let isGameOver = false;
+        let gameSpeed = 5;
+        
+        // 공룡 오브젝트
+        const dino = {
+            x: 50,
+            y: 160,
+            width: 40,
+            height: 40,
+            velocityY: 0,
+            gravity: 0.6,
+            jumpStrength: -11,
+            isJumping: false,
+            // 2D 캔버스로 그리는 도트 공룡 모양 모양 정의
+            draw() {
+                ctx.fillStyle = "#535353"; // 오리지널 크롬 감성의 다크 그레이 색상
+                
+                // 머리와 턱
+                ctx.fillRect(this.x + 20, this.y, 20, 16);
+                ctx.fillRect(this.x + 20, this.y + 12, 14, 4);
+                // 눈 (흰색 픽셀)
+                ctx.fillStyle = "#ffffff";
+                ctx.fillRect(this.x + 24, this.y + 4, 4, 4);
+                
+                // 몸통과 꼬리
+                ctx.fillStyle = "#535353";
+                ctx.fillRect(this.x + 4, this.y + 12, 20, 20); // 주 몸통
+                ctx.fillRect(this.x, this.y + 16, 4, 12);     // 꼬리 끝
+                ctx.fillRect(this.x + 4, this.y + 28, 4, 4);   // 꼬리 연결부
+                
+                // 팔
+                ctx.fillRect(this.x + 24, this.y + 20, 6, 4);
+                
+                // 다리
+                ctx.fillRect(this.x + 8, this.y + 32, 4, 8);  // 뒷다리
+                ctx.fillRect(this.x + 18, this.y + 32, 4, 8); // 앞다리
+            },
+            jump() {
+                if (!this.isJumping && !isGameOver) {
+                    this.velocityY = this.jumpStrength;
+                    this.isJumping = true;
+                }
+            },
+            update() {
+                this.velocityY += this.gravity;
+                this.y += this.velocityY;
+
+                // 바닥 착지 감지 (바닥 y 좌표: 160)
+                if (this.y >= 160) {
+                    this.y = 160;
+                    this.velocityY = 0;
+                    this.isJumping = false;
+                }
+            }
+        };
+
+        // 장애물(선인장) 오브젝트
+        const cactus = {
+            x: 650,
+            y: 150,
+            width: 25,
+            height: 50,
+            draw() {
+                ctx.fillStyle = "#535353";
+                // 중앙 기둥
+                ctx.fillRect(this.x + 8, this.y, 9, 50);
+                // 왼쪽 가지
+                ctx.fillRect(this.x, this.y + 15, 8, 8);
+                ctx.fillRect(this.x, this.y + 8, 4, 10);
+                // 오른쪽 가지
+                ctx.fillRect(this.x + 17, this.y + 22, 8, 8);
+                ctx.fillRect(this.x + 21, this.y + 12, 4, 14);
+            },
+            update() {
+                this.x -= gameSpeed;
+                // 화면 밖으로 나가면 오른쪽 끝으로 리셋
+                if (this.x < -this.width) {
+                    this.x = canvas.width + Math.random() * 150; // 리셋 간격을 랜덤하게
+                }
+            }
+        };
+
+        // 땅 무늬 그리기 (현실감 추가)
+        function drawGround() {
+            ctx.strokeStyle = "#535353";
+            ctx.lineWidth = 2;
+            
+            // 점선 효과로 움직이는 바닥 느낌 내기
+            ctx.beginPath();
+            ctx.moveTo(0, 199);
+            ctx.lineTo(canvas.width, 199);
+            ctx.stroke();
+            
+            // 군데군데 땅에 있는 작은 돌/먼지 효과
+            ctx.fillStyle = "#e0e0e0";
+            ctx.fillRect(100, 192, 10, 2);
+            ctx.fillRect(350, 195, 15, 2);
+            ctx.fillRect(500, 191, 5, 2);
+        }
+
+        // 충돌 체크 알고리즘 AABB
+        function checkCollision() {
+            if (
+                dino.x < cactus.x + cactus.width &&
+                dino.x + dino.width > cactus.x &&
+                dino.y < cactus.y + cactus.height &&
+                dino.y + dino.height > cactus.y
+            ) {
+                endGame();
+            }
+        }
+
+        // 게임 루프
+        function gameLoop() {
+            if (isGameOver) return;
+
+            // 1. 화면 비우기
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // 2. 오브젝트 업데이트
+            dino.update();
+            cactus.update();
+
+            // 3. 충돌 검사
+            checkCollision();
+
+            // 4. 오브젝트 그리기
+            drawGround();
+            dino.draw();
+            cactus.draw();
+
+            // 점수 증가 및 속도 증가
+            score++;
+            let paddedScore = String(Math.floor(score / 5)).padStart(5, '0');
+            scoreDisplay.textContent = paddedScore;
+
+            // 난이도 상승: 점수가 높을수록 속도가 조금씩 빨라짐
+            if (score % 500 === 0 && gameSpeed < 12) {
+                gameSpeed += 0.5;
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        // 게임 시작 및 재시작
+        function startGame() {
+            isGameOver = false;
+            score = 0;
+            gameSpeed = 6;
+            cactus.x = canvas.width + 100;
+            dino.y = 160;
+            dino.velocityY = 0;
+            dino.isJumping = false;
+            gameOverPanel.style.display = "none";
+            
+            gameLoop();
+        }
+
+        // 게임 오버
+        function endGame() {
+            isGameOver = true;
+            gameOverPanel.style.display = "block";
+        }
+
+        // 컨트롤 리스너 (PC 스페이스바)
+        window.addEventListener("keydown", (e) => {
+            if (e.code === "Space") {
+                e.preventDefault();
+                if (isGameOver) startGame();
+                else dino.jump();
+            }
+        });
+
+        // 컨트롤 리스너 (모바일 터치)
+        window.addEventListener("touchstart", (e) => {
+            if (isGameOver) startGame();
+            else dino.jump();
+        });
+
+        // 최초 실행
+        startGame();
+    </script>
+</body>
+</html>
