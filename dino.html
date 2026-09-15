@@ -20,11 +20,9 @@
             -webkit-user-select: none;
         }
 
-        /* 메인으로 가기 버튼 스타일 */
+        /* 메인으로 가기 버튼 스타일 (다른 게임들과 일관된 중앙 상단 배치) */
         #home-btn {
-            position: absolute;
-            top: 20px;
-            left: 20px;
+            margin-bottom: 15px;
             padding: 8px 16px;
             font-size: 14px;
             font-weight: bold;
@@ -55,18 +53,20 @@
             max-width: 95vw;
             border-radius: 4px;
         }
+        
+        /* 게임 오버 팝업 폰트 크기 감소 (20px -> 16px) 및 내부 텍스트 크기 조정 */
         #game-over-panel {
             display: none;
             position: absolute;
-            top: 45%;
+            top: 48%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
             color: #535353;
             text-align: center;
             background: rgba(255,255,255,0.95);
-            padding: 20px 30px;
+            padding: 16px 24px;
             border-radius: 8px;
             border: 2px solid #535353;
             box-shadow: 0 4px 10px rgba(0,0,0,0.15);
@@ -81,7 +81,7 @@
 </head>
 <body>
 
-    <!-- 메인으로 가기 버튼 (index.html 경로로 이동) -->
+    <!-- 메인으로 가기 버튼 -->
     <a id="home-btn" href="index.html">메인으로</a>
 
     <div id="score">00000</div>
@@ -90,7 +90,7 @@
 
     <div id="game-over-panel">
         GAMEOVER<br>
-        <span style="font-size:14px; color:#888; display:inline-block; margin-top:10px;">터치,스페이스바 재시작</span>
+        <span style="font-size:12px; color:#888; display:inline-block; margin-top:8px;">터치,스페이스바 재시작</span>
     </div>
 
     <div class="instruction">스페이스바,화면 터치</div>
@@ -103,10 +103,10 @@
 
         let score = 0;
         let isGameOver = false;
-        let gameSpeed = 300; // 프레임 기준이 아닌 초당 이동 픽셀 수로 변경
+        let gameSpeed = 350;
         let cactuses = [];
         let nextSpawnDistance = 0;
-        let lastTime = 0; // 프레임 보정을 위한 시간 저장 변수
+        let lastTime = 0;
         
         // 공룡 오브젝트
         const dino = {
@@ -115,8 +115,8 @@
             width: 40,
             height: 40,
             velocityY: 0,
-            gravity: 2000, // 초당 가속도 기준
-            jumpStrength: -650, // 점프 시 초기 초당 속도
+            gravity: 2000,
+            jumpStrength: -650,
             isJumping: false,
             
             draw() {
@@ -160,11 +160,11 @@
             }
         };
 
-        // 다양해진 선인장 클래스
+        // 장애물 클래스
         class Cactus {
             constructor(x, type) {
                 this.x = x;
-                this.type = type; // 'small', 'medium', 'large'
+                this.type = type;
                 
                 if (type === 'small') {
                     this.width = 18;
@@ -172,30 +172,27 @@
                 } else if (type === 'medium') {
                     this.width = 25;
                     this.height = 44;
-                } else { // 'large'
+                } else {
                     this.width = 34;
                     this.height = 55;
                 }
                 
-                this.y = 200 - this.height; // 바닥 높이에 맞춰 배치
+                this.y = 200 - this.height;
             }
 
             draw() {
                 ctx.fillStyle = "#535353";
-                const scale = this.height / 50; // 기본 50px 기준 스케일 계산
+                const scale = this.height / 50;
 
-                // 중앙 기둥
                 const mainWidth = Math.max(4, 8 * scale);
                 const mainX = this.x + (this.width - mainWidth) / 2;
                 ctx.fillRect(mainX, this.y, mainWidth, this.height);
 
-                // 왼쪽 가지
                 const leftArmY = this.y + this.height * 0.3;
                 const leftArmH = Math.max(4, 8 * scale);
                 ctx.fillRect(this.x, leftArmY, mainX - this.x, leftArmH);
                 ctx.fillRect(this.x, leftArmY - (10 * scale), Math.max(3, 4 * scale), 10 * scale);
 
-                // 오른쪽 가지
                 const rightArmY = this.y + this.height * 0.45;
                 const rightArmH = Math.max(4, 8 * scale);
                 ctx.fillRect(mainX + mainWidth, rightArmY, (this.x + this.width) - (mainX + mainWidth), rightArmH);
@@ -207,7 +204,6 @@
             }
         }
 
-        // 선인장 생성 관리 함수
         function handleCactuses(dt) {
             if (cactuses.length === 0) {
                 spawnCactus(canvas.width + 100);
@@ -222,7 +218,6 @@
                 cactuses[i].update(dt);
                 cactuses[i].draw();
 
-                // 화면 밖으로 지나간 선인장 제거
                 if (cactuses[i].x < -cactuses[i].width) {
                     cactuses.splice(i, 1);
                 }
@@ -234,11 +229,9 @@
             const randomType = types[Math.floor(Math.random() * types.length)];
             cactuses.push(new Cactus(xPos, randomType));
             
-            // 다음 장애물과의 최소/최대 거리 설정
             nextSpawnDistance = 200 + Math.random() * 200 + (gameSpeed * 0.2);
         }
 
-        // 땅 무늬
         function drawGround() {
             ctx.strokeStyle = "#535353";
             ctx.lineWidth = 2;
@@ -254,7 +247,6 @@
             ctx.fillRect(500, 191, 5, 2);
         }
 
-        // 충돌 체크 (AABB)
         function checkCollision() {
             for (let cactus of cactuses) {
                 if (
@@ -269,29 +261,24 @@
             }
         }
 
-        // 게임 루프
         function gameLoop(timestamp) {
             if (isGameOver) return;
 
             if (!lastTime) lastTime = timestamp;
-            const dt = Math.min((timestamp - lastTime) / 1000, 0.1); // 시간 변화량(초 단위) 계산
+            const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
             lastTime = timestamp;
 
-            // 1. 화면 비우기
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            // 2. 오브젝트 업데이트 및 그리기
             drawGround();
             dino.update(dt);
             dino.draw();
             
             handleCactuses(dt);
 
-            // 3. 충돌 검사
             checkCollision();
 
-            // 점수 및 속도 조절
-            score += dt * 60; // 60fps 기준 점수 상승률 보정
+            score += dt * 60;
             let paddedScore = String(Math.floor(score / 5)).padStart(5, '0');
             scoreDisplay.textContent = paddedScore;
 
@@ -302,7 +289,6 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // 게임 시작 및 재시작
         function startGame() {
             isGameOver = false;
             score = 0;
@@ -317,13 +303,11 @@
             requestAnimationFrame(gameLoop);
         }
 
-        // 게임 오버
         function endGame() {
             isGameOver = true;
             gameOverPanel.style.display = "block";
         }
 
-        // 키보드 컨트롤
         window.addEventListener("keydown", (e) => {
             if (e.code === "Space") {
                 e.preventDefault();
@@ -332,14 +316,12 @@
             }
         });
 
-        // 터치 컨트롤 (메인으로 가기 버튼 터치 시 게임 점프 방지)
         window.addEventListener("touchstart", (e) => {
             if (e.target.id === "home-btn") return;
             if (isGameOver) startGame();
             else dino.jump();
         });
 
-        // 최초 실행
         startGame();
     </script>
 </body>
