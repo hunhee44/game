@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>2인용 틱택토 게임</title>
+    <title>3D 입체 틱택토 게임</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -13,56 +13,115 @@
             justify-content: center;
             height: 100vh;
             margin: 0;
-            background-color: #f0f2f5;
+            background-color: #eef2f5;
         }
         h1 {
             color: #333;
             margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
         #status {
             font-size: 1.2rem;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             font-weight: bold;
-            color: #555;
+            color: #444;
+            background: #ffffff;
+            padding: 8px 18px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
         }
+
+        /* 입체적인 판 배경 (게임 보드 프레임) */
         .board {
             display: grid;
             grid-template-columns: repeat(3, 100px);
             grid-template-rows: repeat(3, 100px);
-            gap: 5px;
+            gap: 12px;
+            background-color: #d1d9e6;
+            padding: 15px;
+            border-radius: 16px;
+            /* 테두리와 깊은 그림자로 입체적인 틀 표현 */
+            box-shadow: 
+                8px 8px 16px #b8c1ec,
+                -8px -8px 16px #ffffff,
+                inset 2px 2px 5px rgba(0,0,0,0.1);
         }
+
+        /* 입체적인 셀(타일) 버튼 */
         .cell {
             width: 100px;
             height: 100px;
-            background-color: #fff;
-            border: 2px solid #ccc;
-            border-radius: 8px;
-            font-size: 2.5rem;
-            font-weight: bold;
+            background-color: #e0e5ec;
+            border: none;
+            border-radius: 12px;
+            font-size: 2.8rem;
+            font-weight: 900;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: background-color 0.2s;
+            
+            /* 타일 입체 그림자 효과 */
+            box-shadow: 
+                5px 5px 10px #a3b1c6,
+                -5px -5px 10px #ffffff;
+            transition: all 0.15s ease;
+            user-select: none;
         }
+
         .cell:hover {
-            background-color: #e8f0fe;
+            transform: translateY(-2px);
+            box-shadow: 
+                6px 6px 12px #a3b1c6,
+                -6px -6px 12px #ffffff;
         }
-        .cell.X { color: #ff4d4f; }
-        .cell.O { color: #1890ff; }
+
+        /* 클릭했을 때 살짝 파이는 듯한 효과 */
+        .cell:active {
+            transform: translateY(2px);
+            box-shadow: 
+                inset 3px 3px 6px #a3b1c6,
+                inset -3px -3px 6px #ffffff;
+        }
+
+        /* 입체적인 X 글자 스타일 */
+        .cell.X { 
+            color: #ff4d4f; 
+            text-shadow: 
+                2px 2px 0px #b32d2e,
+                3px 3px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 입체적인 O 글자 스타일 */
+        .cell.O { 
+            color: #1890ff; 
+            text-shadow: 
+                2px 2px 0px #096dd9,
+                3px 3px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 입체적인 리셋 버튼 */
         #reset-btn {
-            margin-top: 20px;
-            padding: 10px 20px;
+            margin-top: 30px;
+            padding: 12px 28px;
             font-size: 1rem;
             background-color: #4caf50;
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 10px;
             cursor: pointer;
             font-weight: bold;
+            box-shadow: 0 5px 0 #388e3c, 0 8px 10px rgba(0,0,0,0.15);
+            transition: all 0.1s ease;
         }
+
         #reset-btn:hover {
-            background-color: #45a049;
+            background-color: #43a047;
+        }
+
+        #reset-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 1px 0 #388e3c, 0 3px 5px rgba(0,0,0,0.15);
         }
     </style>
 </head>
@@ -95,24 +154,20 @@
         let gameState = ["", "", "", "", "", "", "", "", ""];
         let isGameActive = true;
 
-        // 올바르게 수정된 승리 조건 배열
         const winningConditions = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8], // 가로
             [0, 3, 6], [1, 4, 7], [2, 5, 8], // 세로
             [0, 4, 8], [2, 4, 6]             // 대각선
         ];
 
-        // 클릭 이벤트 처리
         function handleCellClick(e) {
             const clickedCell = e.target;
             const clickedCellIndex = parseInt(clickedCell.getAttribute('data-index'));
 
-            // 이미 채워져 있거나 게임이 끝났다면 무시
             if (gameState[clickedCellIndex] !== "" || !isGameActive) {
                 return;
             }
 
-            // 데이터 업데이트 및 UI 반영
             gameState[clickedCellIndex] = currentPlayer;
             clickedCell.textContent = currentPlayer;
             clickedCell.classList.add(currentPlayer);
@@ -120,7 +175,6 @@
             checkResult();
         }
 
-        // 승리 및 무승부 판정
         function checkResult() {
             let roundWon = false;
 
@@ -138,19 +192,16 @@
                 return;
             }
 
-            // 모든 칸이 찼는데 승자가 없는 경우 (무승부)
             if (!gameState.includes("")) {
                 statusText.textContent = "무승부입니다!";
                 isGameActive = false;
                 return;
             }
 
-            // 정상적으로 턴 전환 (X였으면 O로, O였으면 X로)
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             statusText.textContent = `턴: 플레이어 ${currentPlayer}`;
         }
 
-        // 게임 리셋
         function resetGame() {
             currentPlayer = 'X';
             gameState = ["", "", "", "", "", "", "", "", ""];
@@ -162,7 +213,6 @@
             });
         }
 
-        // 이벤트 리스너 연결
         cells.forEach(cell => cell.addEventListener('click', handleCellClick));
         resetBtn.addEventListener('click', resetGame);
     </script>
