@@ -42,8 +42,10 @@
 
         /* 게임 이동 입체 버튼 */
         .game-link {
-            display: block;
-            padding: 16px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center; /* 전체 콘텐츠 중앙 배치 */
+            padding: 16px 20px;
             font-size: 1.1rem;
             font-weight: bold;
             color: #1890ff;
@@ -54,12 +56,27 @@
                 5px 5px 10px #a3b1c6,
                 -5px -5px 10px #ffffff;
             transition: all 0.15s ease;
-            
-            /* 버튼끼리 떨어지도록 간격 추가 */
             margin-bottom: 16px; 
         }
 
-        /* 마지막 버튼은 아래 여백 제거 */
+        /* 이모지 2개 전용 영역 (60px 너비로 세로 줄바꿈 방지) */
+        .game-icon {
+            width: 60px;
+            text-align: center;
+            margin-right: 10px;
+            font-size: 1.2rem;
+            flex-shrink: 0; /* 폭이 좁아져도 절대 깨지지 않음 */
+            white-space: nowrap;
+        }
+
+        /* 게임 이름 텍스트 (좌측 정렬로 시작점 통일) */
+        .game-title {
+            width: 110px;
+            text-align: left;
+            white-space: nowrap;
+        }
+
+        /* 마지막 버튼 아래 여백 제거 */
         .game-link:last-child {
             margin-bottom: 0;
         }
@@ -88,19 +105,23 @@
         
         <!-- 틱택토 게임 페이지 링크 -->
         <a href="tictactoe.html" class="game-link">
-            ❌⭕ 틱택토
+            <span class="game-icon">❌⭕</span>
+            <span class="game-title">틱택토</span>
         </a>
         <!-- 패널티킥 게임 페이지 링크 -->
         <a href="penalty.html" class="game-link">
-            ⚽⚽ 패널티킥
+            <span class="game-icon">⚽⚽</span>
+            <span class="game-title">패널티킥</span>
         </a>
         <!-- 홈런레이스 게임 페이지 링크 -->
         <a href="homerun.html" class="game-link">
-            ⚾⚾ 홈런
+            <span class="game-icon">⚾⚾</span>
+            <span class="game-title">홈런</span>
         </a>
         <!-- 달리기 공룡 게임 페이지 링크 -->
         <a href="dino.html" class="game-link">
-            🦖🦖  공룡 달리기
+            <span class="game-icon">🦖🦖</span>
+            <span class="game-title">공룡 달리기</span>
         </a>
     </div>
 
