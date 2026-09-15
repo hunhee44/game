@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D 홈런 레이스</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            background-color: #eef2f5;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 5px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .scoreboard {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+            font-weight: bold;
+            font-size: 1rem;
+            color: #444;
+        }
+
+        .score-box {
+            background: #ffffff;
+            padding: 8px 16px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        #status {
+            font-size: 1.1rem;
+            margin-bottom: 15px;
+            font-weight: bold;
+            color: #1890ff;
+            background: #ffffff;
+            padding: 8px 20px;
+            border-radius: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            min-height: 24px;
+        }
+
+        /* 야구장 경기장 프레임 */
+        .game-stage {
+            position: relative;
+            width: 320px;
+            height: 380px;
+            background: linear-gradient(to bottom, #a8e6cf 0%, #d1d9e6 70%);
+            border-radius: 20px;
+            box-shadow: 
+                8px 8px 16px #b8c1ec,
+                -8px -8px 16px #ffffff;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 투수 영역 */
+        #pitcher {
+            position: absolute;
+            top: 40px;
+            width: 60px;
+            height: 70px;
+            transition: transform 0.2s;
+        }
+
+        /* 타자 영역 */
+        #batter {
+            position: absolute;
+            bottom: 30px;
+            right: 40px;
+            width: 90px;
+            height: 100px;
+            transform-origin: 75% 75%; /* 스윙 중심점 */
+            transition: transform 0.08s ease-out;
+        }
+
+        /* 스트라이크 존 */
+        .strike-zone {
+            position: absolute;
+            bottom: 55px;
+            width: 100px;
+            height: 30px;
+            border: 2px dashed rgba(24, 144, 255, 0.4);
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        /* 야구공 */
+        #ball {
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            top: 70px;
+            left: 148px;
+            display: none;
+            z-index: 5;
+        }
+
+        /* 메인 액션 버튼 */
+        .action-btn {
+            margin-top: 20px;
+            width: 220px;
+            padding: 16px;
+            font-size: 1.25rem;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .action-btn.pitch-mode {
+            background-color: #1890ff;
+            box-shadow: 0 6px 0 #096dd9, 0 8px 12px rgba(0,0,0,0.15);
+        }
+
+        .action-btn.pitch-mode:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #096dd9;
+        }
+
+        .action-btn.swing-mode {
+            background-color: #ff4d4f;
+            box-shadow: 0 6px 0 #cf1322, 0 8px 12px rgba(0,0,0,0.15);
+            animation: pulse 0.6s infinite alternate;
+        }
+
+        .action-btn.swing-mode:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 #cf1322;
+        }
+
+        @keyframes pulse {
+            from { transform: scale(1); }
+            to { transform: scale(1.03); }
+        }
+
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            text-decoration: none;
+            transition: all 0.1s ease;
+        }
+
+        #reset-btn {
+            background-color: #4caf50;
+            box-shadow: 0 4px 0 #388e3c;
+        }
+
+        .home-btn {
+            background-color: #722ed1;
+            box-shadow: 0 4px 0 #531dab;
+        }
+
+        .btn:active {
+            transform: translateY(2px);
+        }
+    </style>
+</head>
+<body>
+
+    <h1>⚾ 3D 홈런 레이스</h1>
+    
+    <div class="scoreboard">
+        <div class="score-box">홈런: <span id="homeruns">0</span></div>
+        <div class="score-box">안타: <span id="hits">0</span></div>
+        <div class="score-box">아웃: <span id="outs">0</span></div>
+    </div>
+
+    <div id="status">[공 던지기]를 누르세요!</div>
+    
+    <div class="game-stage">
+        <!-- 투수 (글러브 착용) -->
+        <div id="pitcher">
+            <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <!-- 모자 및 머리 -->
+                <circle cx="50" cy="28" r="16" fill="#ffcc80"/>
+                <path d="M 32 24 Q 50 10 68 24 Q 50 18 32 24 Z" fill="#2b8a3e"/> <!-- 모자 챙 -->
+                <circle cx="44" cy="26" r="2" fill="#333"/>
+                <circle cx="56" cy="26" r="2" fill="#333"/>
+                <!-- 몸통 (유니폼) -->
+                <rect x="35" y="44" width="30" height="36" rx="6" fill="#52c41a"/>
+                <!-- 오른팔 (투구 팔) -->
+                <rect x="23" y="46" width="10" height="24" rx="4" fill="#ffcc80" transform="rotate(15 23 46)"/>
+                <!-- 왼팔 및 야구 글러브 -->
+                <g id="glove-hand">
+                    <rect x="67" y="46" width="9" height="20" rx="4" fill="#ffcc80" transform="rotate(-10 67 46)"/>
+                    <!-- 가죽 글러브 표현 -->
+                    <path d="M 68 58 C 65 65, 68 76, 78 78 C 86 80, 88 68, 82 60 C 78 55, 72 54, 68 58 Z" fill="#8d5524"/>
+                    <path d="M 72 61 C 70 66, 72 73, 78 74" stroke="#5c3a17" stroke-width="2" fill="none"/>
+                </g>
+            </svg>
+        </div>
+
+        <!-- 스트라이크 존 -->
+        <div class="strike-zone"></div>
+
+        <!-- 야구공 -->
+        <div id="ball">
+            <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <circle cx="50" cy="50" r="45" fill="#ffffff" stroke="#ccc" stroke-width="2"/>
+                <path d="M 20 25 Q 50 50 20 75" stroke="#ff4d4f" stroke-width="6" fill="none"/>
+                <path d="M 80 25 Q 50 50 80 75" stroke="#ff4d4f" stroke-width="6" fill="none"/>
+            </svg>
+        </div>
+
+        <!-- 타자 및 리얼한 야구 방망이 -->
+        <div id="batter">
+            <svg viewBox="0 0 100 100" width="100%" height="100%">
+                <!-- 진짜 야구방망이 (손잡이노브, 그립, 곡선 테이퍼, 두꺼운 배럴) -->
+                <g id="real-bat" transform="rotate(-55 20 50)">
+                    <!-- 배트 끝 노브(Knob) -->
+                    <circle cx="12" cy="78" r="5" fill="#a0522d"/>
+                    <!-- 그립 테이프 (검은 손잡이) -->
+                    <rect x="10" y="58" width="4" height="20" rx="1" fill="#333333"/>
+                    <!-- 방망이 본체 (얇은 그립에서 두꺼운 헤드로 이어지는 곡선) -->
+                    <path d="M 10 58 L 7 18 C 6 12, 18 12, 17 18 L 14 58 Z" fill="#e2a76f"/>
+                    <!-- 방망이 입체감/광택 음영 -->
+                    <path d="M 10 58 L 8 18 C 8 15, 13 15, 13 18 L 12 58 Z" fill="#f4c28c"/>
+                </g>
+
+                <!-- 타자 모자 및 머리 -->
+                <circle cx="50" cy="35" r="16" fill="#ffcc80"/>
+                <path d="M 32 31 Q 50 17 68 31 Q 50 25 32 31 Z" fill="#d32f2f"/> <!-- 빨간 헬멧/모자 -->
+                <circle cx="42" cy="33" r="2" fill="#333"/>
+                <circle cx="54" cy="33" r="2" fill="#333"/>
+                
+                <!-- 타자 몸통 및 유니폼 -->
+                <rect x="35" y="51" width="30" height="38" rx="6" fill="#ff4d4f"/>
+                <!-- 타격 자세 손/팔 -->
+                <circle cx="28" cy="58" r="6" fill="#ffcc80"/>
+            </svg>
+        </div>
+    </div>
+
+    <!-- 메인 액션 버튼 -->
+    <button id="action-btn" class="action-btn pitch-mode">⚾ 공 던지기</button>
+
+    <div class="controls">
+        <button id="reset-btn" class="btn">초기화</button>
+        <a href="index.html" class="btn home-btn">메인으로</a>
+    </div>
+
+    <script>
+        const statusText = document.getElementById('status');
+        const homerunsText = document.getElementById('homeruns');
+        const hitsText = document.getElementById('hits');
+        const outsText = document.getElementById('outs');
+        
+        const ball = document.getElementById('ball');
+        const batter = document.getElementById('batter');
+        const pitcher = document.getElementById('pitcher');
+        
+        const actionBtn = document.getElementById('action-btn');
+        const resetBtn = document.getElementById('reset-btn');
+
+        let homeruns = 0;
+        let hits = 0;
+        let outs = 0;
+
+        let isPitching = false;
+        let isSwung = false;
+        let animFrameId = null;
+
+        let ballY = 70;
+        let ballX = 148;
+        let speed = 0;
+        let curveX = 0;
+
+        function setButtonMode(mode) {
+            if (mode === 'pitch') {
+                actionBtn.textContent = '⚾ 공 던지기';
+                actionBtn.className = 'action-btn pitch-mode';
+            } else if (mode === 'swing') {
+                actionBtn.textContent = '💥 SWING!';
+                actionBtn.className = 'action-btn swing-mode';
+            }
+        }
+
+        function handleActionButton() {
+            if (!isPitching) {
+                pitch();
+            } else if (!isSwung) {
+                swing();
+            }
+        }
+
+        function pitch() {
+            isPitching = true;
+            isSwung = false;
+
+            setButtonMode('swing');
+
+            speed = Math.random() * 3 + 2.5; 
+            curveX = (Math.random() - 0.5) * 2.4; 
+
+            ballY = 70;
+            ballX = 148;
+            ball.style.display = 'block';
+            ball.style.transform = 'scale(0.6)';
+
+            pitcher.style.transform = 'scale(1.1)';
+            setTimeout(() => pitcher.style.transform = 'scale(1)', 200);
+
+            statusText.textContent = "타격 준비! 타이밍 맞춰 버튼 터치!";
+            animateBall();
+        }
+
+        function animateBall() {
+            if (!isPitching) return;
+
+            ballY += speed;
+            ballX += curveX;
+
+            const scale = 0.6 + (ballY - 70) / 300 * 0.8;
+
+            ball.style.top = ballY + 'px';
+            ball.style.left = ballX + 'px';
+            ball.style.transform = `scale(${scale})`;
+
+            if (ballY > 320) {
+                if (!isSwung) {
+                    outs++;
+                    statusText.textContent = "⚾ 스트라이크! (스윙하지 않음)";
+                    updateScoreboard();
+                }
+                endPitch();
+                return;
+            }
+
+            animFrameId = requestAnimationFrame(animateBall);
+        }
+
+        function swing() {
+            isSwung = true;
+
+            // 시원한 풀스윙 모션
+            batter.style.transform = "rotate(-95deg) scale(1.15)";
+            setTimeout(() => batter.style.transform = "rotate(0deg) scale(1)", 300);
+
+            const diff = Math.abs(ballY - 295);
+
+            cancelAnimationFrame(animFrameId);
+            ball.style.display = 'none';
+
+            let result = "";
+
+            if (diff < 12) {
+                if (Math.random() < 0.8) {
+                    homeruns++;
+                    result = "🔥 PERFECT! 장외 대형 홈런!! ⚾💥";
+                } else {
+                    hits++;
+                    result = "👍 GOOD! 깔끔한 안타!";
+                }
+            } else if (diff < 28) {
+                if (Math.random() < 0.3) {
+                    homeruns++;
+                    result = "🎉 GREAT! 담장을 넘어가는 홈런!!";
+                } else {
+                    hits++;
+                    result = "👌 OK! 내야를 꿰뚫는 안타!";
+                }
+            } else if (diff < 45) {
+                if (Math.random() < 0.05) {
+                    homeruns++;
+                    result = "😲 LUCKY! 펜스를 살짝 넘긴 홈런!";
+                } else {
+                    outs++;
+                    result = "😅 BAD! 뜬공 아웃!";
+                }
+            } else {
+                outs++;
+                result = "❌ SWING & MISS! 헛스윙 삼진!";
+            }
+
+            statusText.textContent = result;
+            updateScoreboard();
+
+            setTimeout(() => {
+                endPitch();
+            }, 1000);
+        }
+
+        function endPitch() {
+            isPitching = false;
+            setButtonMode('pitch');
+        }
+
+        function updateScoreboard() {
+            homerunsText.textContent = homeruns;
+            hitsText.textContent = hits;
+            outsText.textContent = outs;
+        }
+
+        function resetGame() {
+            homeruns = 0;
+            hits = 0;
+            outs = 0;
+            isPitching = false;
+            isSwung = false;
+            cancelAnimationFrame(animFrameId);
+            ball.style.display = 'none';
+            setButtonMode('pitch');
+            updateScoreboard();
+            statusText.textContent = "[공 던지기]를 누르세요!";
+        }
+
+        actionBtn.addEventListener('click', handleActionButton);
+        resetBtn.addEventListener('click', resetGame);
+    </script>
+</body>
+</html>
