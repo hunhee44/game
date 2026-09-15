@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>페널티킥</title>
+    <title>3D 캐릭터 페널티킥 게임</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -22,7 +22,6 @@
             text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
         }
 
-        /* 점수판 및 상태 표시 */
         .scoreboard {
             display: flex;
             gap: 20px;
@@ -40,7 +39,7 @@
 
         #status {
             font-size: 1.1rem;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
             font-weight: bold;
             color: #1890ff;
             background: #ffffff;
@@ -50,29 +49,38 @@
             min-height: 24px;
         }
 
-        /* 축구 골대 및 6개 조준 구역 프레임 */
+        /* 게임 필드 및 골대 영역 */
+        .game-stage {
+            position: relative;
+            background-color: #d1d9e6;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 
+                8px 8px 16px #b8c1ec,
+                -8px -8px 16px #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* 골대 구조 및 구역 */
         .goal-container {
             display: grid;
             grid-template-columns: repeat(3, 110px);
             grid-template-rows: repeat(2, 100px);
             gap: 12px;
-            background-color: #d1d9e6;
-            padding: 16px;
-            border-radius: 16px;
-            border: 6px solid #ffffff; /* 골대 느낌의 흰색 프레임 */
-            box-shadow: 
-                8px 8px 16px #b8c1ec,
-                -8px -8px 16px #ffffff,
-                inset 2px 2px 5px rgba(0,0,0,0.1);
+            background-color: #c4d0e0;
+            padding: 12px;
+            border-radius: 14px;
+            border: 6px solid #ffffff;
             position: relative;
         }
 
-        /* 슛 타겟 버튼 */
         .target-zone {
-            background-color: #e0e5ec;
+            background-color: rgba(224, 229, 236, 0.7);
             border: none;
             border-radius: 12px;
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             font-weight: bold;
             color: #555;
             display: flex;
@@ -81,48 +89,83 @@
             justify-content: center;
             cursor: pointer;
             box-shadow: 
-                5px 5px 10px #a3b1c6,
-                -5px -5px 10px #ffffff;
+                3px 3px 6px #a3b1c6,
+                -3px -3px 6px #ffffff;
             transition: all 0.15s ease;
             user-select: none;
+            z-index: 2;
         }
 
         .target-zone:hover {
             transform: translateY(-2px);
+            background-color: #ffffff;
             color: #1890ff;
-            box-shadow: 
-                6px 6px 12px #a3b1c6,
-                -6px -6px 12px #ffffff;
         }
 
         .target-zone:active {
             transform: translateY(2px);
-            box-shadow: 
-                inset 3px 3px 6px #a3b1c6,
-                inset -3px -3px 6px #ffffff;
         }
 
-        /* 결과 연출 스타일 */
-        .target-zone.goal {
-            background-color: #e6f7ff;
-            color: #52c41a;
+        /* 캐릭터 레이어 (골키퍼 & 키커) */
+        .character {
+            position: absolute;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            pointer-events: none;
+            z-index: 10;
         }
 
-        .target-zone.saved {
-            background-color: #fff1f0;
-            color: #ff4d4f;
+        /* 골키퍼 캐릭터 */
+        #keeper {
+            width: 70px;
+            height: 70px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
 
-        .zone-icon {
-            font-size: 1.8rem;
-            margin-top: 4px;
+        /* 키커 캐릭터 & 공 */
+        .kicker-area {
+            margin-top: 25px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            position: relative;
         }
 
-        /* 게임 컨트롤 버튼 하단 배치 */
+        #kicker {
+            width: 60px;
+            height: 70px;
+            transition: transform 0.2s ease;
+        }
+
+        #ball {
+            width: 35px;
+            height: 35px;
+            transition: all 0.4s ease-in-out;
+            z-index: 15;
+        }
+
+        /* 공 날아가는 애니메이션 위치 계산 클래스들 */
+        .ball-shoot-0 { transform: translate(-120px, -220px) scale(0.6); }
+        .ball-shoot-1 { transform: translate(0px, -220px) scale(0.6); }
+        .ball-shoot-2 { transform: translate(120px, -220px) scale(0.6); }
+        .ball-shoot-3 { transform: translate(-120px, -110px) scale(0.6); }
+        .ball-shoot-4 { transform: translate(0px, -110px) scale(0.6); }
+        .ball-shoot-5 { transform: translate(120px, -110px) scale(0.6); }
+
+        /* 골키퍼 이동 위치 클래스들 */
+        .keeper-pos-0 { top: 25% !important; left: 20% !important; }
+        .keeper-pos-1 { top: 25% !important; left: 50% !important; }
+        .keeper-pos-2 { top: 25% !important; left: 80% !important; }
+        .keeper-pos-3 { top: 75% !important; left: 20% !important; }
+        .keeper-pos-4 { top: 75% !important; left: 50% !important; }
+        .keeper-pos-5 { top: 75% !important; left: 80% !important; }
+
+        /* 하단 컨트롤 */
         .controls {
             display: flex;
             gap: 12px;
-            margin-top: 25px;
+            margin-top: 20px;
         }
 
         .btn {
@@ -143,7 +186,7 @@
 
         #reset-btn:active {
             transform: translateY(4px);
-            box-shadow: 0 1px 0 #388e3c, 0 3px 5px rgba(0,0,0,0.15);
+            box-shadow: 0 1px 0 #388e3c;
         }
 
         .home-btn {
@@ -155,13 +198,13 @@
 
         .home-btn:active {
             transform: translateY(4px);
-            box-shadow: 0 1px 0 #096dd9, 0 3px 5px rgba(0,0,0,0.15);
+            box-shadow: 0 1px 0 #096dd9;
         }
     </style>
 </head>
 <body>
 
-    <h1>⚽승부차기 (Penalty Kick)</h1>
+    <h1>⚽ 캐릭터 승부차기</h1>
     
     <div class="scoreboard">
         <div class="score-box">득점: <span id="goals">0</span></div>
@@ -169,34 +212,58 @@
         <div class="score-box">시도: <span id="attempts">0</span></div>
     </div>
 
-    <div id="status">슛할 방향을 선택하세요!</div>
+    <div id="status">골대를 클릭해 슛을 날리세요!</div>
     
-    <!-- 6개 방향 골대 타겟 -->
-    <div class="goal-container" id="goal">
-        <button class="target-zone" data-pos="0">
-            상단 왼쪽
-            <span class="zone-icon">↖️</span>
-        </button>
-        <button class="target-zone" data-pos="1">
-            상단 중간
-            <span class="zone-icon">⬆️</span>
-        </button>
-        <button class="target-zone" data-pos="2">
-            상단 오른쪽
-            <span class="zone-icon">↗️</span>
-        </button>
-        <button class="target-zone" data-pos="3">
-            하단 왼쪽
-            <span class="zone-icon">↙️</span>
-        </button>
-        <button class="target-zone" data-pos="4">
-            하단 중간
-            <span class="zone-icon">⬇️</span>
-        </button>
-        <button class="target-zone" data-pos="5">
-            하단 오른쪽
-            <span class="zone-icon">↘️</span>
-        </button>
+    <div class="game-stage">
+        <!-- 골대 및 6개 조준선 -->
+        <div class="goal-container" id="goal">
+            <!-- 골키퍼 SVG 캐릭터 -->
+            <div id="keeper" class="character">
+                <svg viewBox="0 0 100 100" width="100%" height="100%">
+                    <!-- 몸통 -->
+                    <circle cx="50" cy="30" r="18" fill="#ffcc80"/> <!-- 얼굴 -->
+                    <rect x="35" y="48" width="30" height="35" rx="5" fill="#ff4d4f"/> <!-- 유니폼 -->
+                    <!-- 눈 & 미소 -->
+                    <circle cx="44" cy="26" r="2.5" fill="#333"/>
+                    <circle cx="56" cy="26" r="2.5" fill="#333"/>
+                    <path d="M 44 34 Q 50 40 56 34" stroke="#333" stroke-width="2" fill="none"/>
+                    <!-- 골키퍼 장갑 -->
+                    <circle cx="20" cy="50" r="10" fill="#ffec3d"/>
+                    <circle cx="80" cy="50" r="10" fill="#ffec3d"/>
+                </svg>
+            </div>
+
+            <button class="target-zone" data-pos="0">상단 왼쪽</button>
+            <button class="target-zone" data-pos="1">상단 중간</button>
+            <button class="target-zone" data-pos="2">상단 오른쪽</button>
+            <button class="target-zone" data-pos="3">하단 왼쪽</button>
+            <button class="target-zone" data-pos="4">하단 중간</button>
+            <button class="target-zone" data-pos="5">하단 오른쪽</button>
+        </div>
+
+        <!-- 필드 하단: 키커 & 축구공 -->
+        <div class="kicker-area">
+            <!-- 키커 SVG 캐릭터 -->
+            <div id="kicker">
+                <svg viewBox="0 0 100 100" width="100%" height="100%">
+                    <circle cx="40" cy="30" r="18" fill="#ffcc80"/> <!-- 얼굴 -->
+                    <rect x="25" y="48" width="30" height="35" rx="5" fill="#1890ff"/> <!-- 유니폼 -->
+                    <circle cx="34" cy="26" r="2.5" fill="#333"/>
+                    <circle cx="46" cy="26" r="2.5" fill="#333"/>
+                    <!-- 축구화 -->
+                    <rect x="15" y="83" width="18" height="10" rx="3" fill="#333"/>
+                    <rect x="38" y="83" width="18" height="10" rx="3" fill="#333"/>
+                </svg>
+            </div>
+
+            <!-- 축구공 SVG -->
+            <div id="ball">
+                <svg viewBox="0 0 100 100" width="100%" height="100%">
+                    <circle cx="50" cy="50" r="45" fill="#ffffff" stroke="#333" stroke-width="4"/>
+                    <polygon points="50,25 30,40 38,65 62,65 70,40" fill="#333"/>
+                </svg>
+            </div>
+        </div>
     </div>
 
     <div class="controls">
@@ -211,6 +278,10 @@
         const savesText = document.getElementById('saves');
         const attemptsText = document.getElementById('attempts');
         const resetBtn = document.getElementById('reset-btn');
+        
+        const keeper = document.getElementById('keeper');
+        const kicker = document.getElementById('kicker');
+        const ball = document.getElementById('ball');
 
         const posNames = ["상단 왼쪽", "상단 중간", "상단 오른쪽", "하단 왼쪽", "하단 중간", "하단 오른쪽"];
 
@@ -224,47 +295,44 @@
             isProcessing = true;
 
             const playerChoice = parseInt(e.currentTarget.getAttribute('data-pos'));
-            
-            // 골키퍼의 무작위 선택 (0~5 번 위치, 1/6 확률)
             const keeperChoice = Math.floor(Math.random() * 6);
 
             attempts++;
-            clearZoneStyles();
 
-            // 판정 로직
-            if (playerChoice === keeperChoice) {
-                // 골키퍼 선방
-                saves++;
-                statusText.textContent = `❌ 선방! 골키퍼가 [${posNames[keeperChoice]}] 방향을 막아냈습니다!`;
-                e.currentTarget.classList.add('saved');
-                e.currentTarget.querySelector('.zone-icon').textContent = '🧤';
-            } else {
-                // 골 성공
-                goals++;
-                statusText.textContent = `⚽ GOAL!! (골키퍼 이동: ${posNames[keeperChoice]})`;
-                e.currentTarget.classList.add('goal');
-                e.currentTarget.querySelector('.zone-icon').textContent = '⚽';
-                
-                // 골키퍼가 이동한 위치도 표시
-                targetZones[keeperChoice].querySelector('.zone-icon').textContent = '🧤';
-            }
+            // 1. 키커 모션 (공을 차는 연출)
+            kicker.style.transform = "translateX(15px) rotate(10deg)";
 
-            updateScoreboard();
-
-            // 1.5초 후 다음 슛 준비
+            // 2. 공과 골키퍼 이동 애니메이션 적용
             setTimeout(() => {
-                clearZoneStyles();
-                statusText.textContent = "다음 슛 방향을 선택하세요!";
-                isProcessing = false;
-            }, 1500);
+                ball.className = `ball-shoot-${playerChoice}`;
+                keeper.className = `character keeper-pos-${keeperChoice}`;
+            }, 100);
+
+            // 3. 판정 연출
+            setTimeout(() => {
+                if (playerChoice === keeperChoice) {
+                    saves++;
+                    statusText.textContent = `❌ 선방! 골키퍼가 [${posNames[keeperChoice]}] 방향을 막아냈습니다!`;
+                } else {
+                    goals++;
+                    statusText.textContent = `⚽ GOAL!! (골키퍼 이동: ${posNames[keeperChoice]})`;
+                }
+
+                updateScoreboard();
+
+                // 1.8초 후 초기 위치로 복귀
+                setTimeout(() => {
+                    resetPositions();
+                    statusText.textContent = "다음 슛 방향을 선택하세요!";
+                    isProcessing = false;
+                }, 1800);
+            }, 400);
         }
 
-        function clearZoneStyles() {
-            const defaultIcons = ['↖️', '⬆️', '↗️', '↙️', '⬇️', '↘️'];
-            targetZones.forEach((zone, index) => {
-                zone.classList.remove('goal', 'saved');
-                zone.querySelector('.zone-icon').textContent = defaultIcons[index];
-            });
+        function resetPositions() {
+            ball.className = '';
+            keeper.className = 'character';
+            kicker.style.transform = 'none';
         }
 
         function updateScoreboard() {
@@ -279,8 +347,8 @@
             attempts = 0;
             isProcessing = false;
             updateScoreboard();
-            clearZoneStyles();
-            statusText.textContent = "슛할 방향을 선택하세요!";
+            resetPositions();
+            statusText.textContent = "골대를 클릭해 슛을 날리세요!";
         }
 
         targetZones.forEach(zone => zone.addEventListener('click', shoot));
