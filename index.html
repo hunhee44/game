@@ -40,7 +40,7 @@
             font-size: 0.95rem;
         }
 
-        /* 틱택토 게임 이동 입체 버튼 */
+        /* 게임 이동 입체 버튼 */
         .game-link {
             display: block;
             padding: 16px 24px;
@@ -54,6 +54,14 @@
                 5px 5px 10px #a3b1c6,
                 -5px -5px 10px #ffffff;
             transition: all 0.15s ease;
+            
+            /* 버튼끼리 떨어지도록 간격 추가 */
+            margin-bottom: 16px; 
+        }
+
+        /* 마지막 버튼은 아래 여백 제거 */
+        .game-link:last-child {
+            margin-bottom: 0;
         }
 
         .game-link:hover {
@@ -78,11 +86,11 @@
         <h1>미니게임🎮</h1>
         <p>플레이하고 싶은 게임을 선택하세요!</p>
         
-        <!-- 틱택토 게임 페이지 링크 (상대 경로로 연결) -->
+        <!-- 틱택토 게임 페이지 링크 -->
         <a href="tictactoe.html" class="game-link">
             ❌⭕ 틱택토
         </a>
-        <!-- 패널티킥 게임 페이지 링크 (상대 경로로 연결) -->
+        <!-- 패널티킥 게임 페이지 링크 -->
         <a href="penalty.html" class="game-link">
             ⚽⚽ 패널티킥
         </a>
