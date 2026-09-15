@@ -1,1 +1,88 @@
-index.html
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hunhee의 미니게임천국</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #eef2f5;
+        }
+
+        .container {
+            background-color: #d1d9e6;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 
+                8px 8px 16px #b8c1ec,
+                -8px -8px 16px #ffffff;
+            max-width: 360px;
+            width: 80%;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 0.95rem;
+        }
+
+        /* 틱택토 게임 이동 입체 버튼 */
+        .game-link {
+            display: block;
+            padding: 16px 24px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #1890ff;
+            text-decoration: none;
+            background-color: #e0e5ec;
+            border-radius: 12px;
+            box-shadow: 
+                5px 5px 10px #a3b1c6,
+                -5px -5px 10px #ffffff;
+            transition: all 0.15s ease;
+        }
+
+        .game-link:hover {
+            transform: translateY(-2px);
+            box-shadow: 
+                6px 6px 12px #a3b1c6,
+                -6px -6px 12px #ffffff;
+            color: #40a9ff;
+        }
+
+        .game-link:active {
+            transform: translateY(2px);
+            box-shadow: 
+                inset 3px 3px 6px #a3b1c6,
+                inset -3px -3px 6px #ffffff;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>미니게임천국 🎮</h1>
+        <p>플레이하고 싶은 게임을 선택하세요!</p>
+        
+        <!-- 틱택토 게임 페이지 링크 (상대 경로로 연결) -->
+        <a href="tictactoe.html" class="game-link">
+            ❌⭕ 3D 틱택토 게임하기
+        </a>
+    </div>
+
+</body>
+</html>
