@@ -102,7 +102,7 @@
             text-shadow: 2px 2px 0px #096dd9, 3px 3px 5px rgba(0,0,0,0.2);
         }
 
-        /* 승리한 3개 셀에 적용될 바운스 애니메이션 */
+        /* 승리한 3개 셀 바운스 애니메이션 */
         .cell.winning-cell {
             background-color: #fffb8f !important;
             animation: winBounce 0.6s ease infinite alternate;
@@ -122,27 +122,6 @@
             transition: all 0.3s ease;
             display: none;
             box-shadow: 0 0 10px rgba(0,0,0,0.3);
-        }
-
-        /* 폭죽(Confetti) 파티클 스타일 */
-        .confetti {
-            position: fixed;
-            width: 10px;
-            height: 10px;
-            z-index: 999;
-            pointer-events: none;
-            animation: fall 2.5s linear forwards;
-        }
-
-        @keyframes fall {
-            0% {
-                opacity: 1;
-                transform: translate(0, 0) rotate(0deg);
-            }
-            100% {
-                opacity: 0;
-                transform: translate(var(--dx), 100vh) rotate(720deg);
-            }
         }
 
         /* 하단 버튼 영역 */
@@ -227,7 +206,7 @@
             [0, 4, 8], [2, 4, 6]             // 대각선
         ];
 
-        // 승리 선의 위치 및 각도 데이터 (보드 패딩/격자 기준)
+        // 승리 선의 위치 및 각도 데이터
         const lineStyles = [
             { width: '310px', height: '8px', top: '62px', left: '22px', transform: 'none' },              // 가로 상단
             { width: '310px', height: '8px', top: '174px', left: '22px', transform: 'none' },             // 가로 중단
@@ -280,9 +259,6 @@
 
                 // 2. 승리 선 보이기
                 drawWinningLine(winConditionIndex);
-
-                // 3. 폭죽 효과 실행
-                triggerConfetti();
                 return;
             }
 
@@ -305,25 +281,6 @@
             winningLine.style.transform = style.transform;
             winningLine.style.backgroundColor = currentPlayer === 'X' ? '#ff4d4f' : '#1890ff';
             winningLine.style.display = 'block';
-        }
-
-        // 폭죽 파티클 생성 함수
-        function triggerConfetti() {
-            const colors = ['#ff4d4f', '#1890ff', '#ffec3d', '#52c41a', '#722ed1'];
-            for (let i = 0; i < 60; i++) {
-                const confetti = document.createElement('div');
-                confetti.classList.add('confetti');
-                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-                confetti.style.left = '50vw';
-                confetti.style.top = '40vh';
-                
-                const dx = (Math.random() - 0.5) * 600 + 'px';
-                confetti.style.setProperty('--dx', dx);
-                
-                document.body.appendChild(confetti);
-
-                setTimeout(() => confetti.remove(), 2500);
-            }
         }
 
         function resetGame() {
