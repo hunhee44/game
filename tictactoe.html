@@ -14,6 +14,7 @@
             height: 100vh;
             margin: 0;
             background-color: #eef2f5;
+            overflow: hidden;
         }
         h1 {
             color: #333;
@@ -29,9 +30,21 @@
             padding: 8px 18px;
             border-radius: 20px;
             box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+        /* 승리 시 상단 텍스트 강조 */
+        #status.win {
+            background: #ffec3d;
+            color: #333;
+            transform: scale(1.15);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
         }
 
-        /* 입체적인 판 배경 (게임 보드 프레임) */
+        /* 보드 및 컨테이너 */
+        .board-container {
+            position: relative;
+        }
+
         .board {
             display: grid;
             grid-template-columns: repeat(3, 100px);
@@ -46,7 +59,6 @@
                 inset 2px 2px 5px rgba(0,0,0,0.1);
         }
 
-        /* 입체적인 셀(타일) 버튼 */
         .cell {
             width: 100px;
             height: 100px;
@@ -80,20 +92,57 @@
                 inset -3px -3px 6px #ffffff;
         }
 
-        /* 입체적인 X 글자 스타일 */
         .cell.X { 
             color: #ff4d4f; 
-            text-shadow: 
-                2px 2px 0px #b32d2e,
-                3px 3px 5px rgba(0,0,0,0.2);
+            text-shadow: 2px 2px 0px #b32d2e, 3px 3px 5px rgba(0,0,0,0.2);
         }
 
-        /* 입체적인 O 글자 스타일 */
         .cell.O { 
             color: #1890ff; 
-            text-shadow: 
-                2px 2px 0px #096dd9,
-                3px 3px 5px rgba(0,0,0,0.2);
+            text-shadow: 2px 2px 0px #096dd9, 3px 3px 5px rgba(0,0,0,0.2);
+        }
+
+        /* 승리한 3개 셀에 적용될 바운스 애니메이션 */
+        .cell.winning-cell {
+            background-color: #fffb8f !important;
+            animation: winBounce 0.6s ease infinite alternate;
+        }
+
+        @keyframes winBounce {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.08); }
+        }
+
+        /* 승리 선 (Winning Line) 오버레이 */
+        .winning-line {
+            position: absolute;
+            background-color: #ff4d4f;
+            border-radius: 4px;
+            z-index: 10;
+            transition: all 0.3s ease;
+            display: none;
+            box-shadow: 0 0 10px rgba(0,0,0,0.3);
+        }
+
+        /* 폭죽(Confetti) 파티클 스타일 */
+        .confetti {
+            position: fixed;
+            width: 10px;
+            height: 10px;
+            z-index: 999;
+            pointer-events: none;
+            animation: fall 2.5s linear forwards;
+        }
+
+        @keyframes fall {
+            0% {
+                opacity: 1;
+                transform: translate(0, 0) rotate(0deg);
+            }
+            100% {
+                opacity: 0;
+                transform: translate(var(--dx), 100vh) rotate(720deg);
+            }
         }
 
         /* 하단 버튼 영역 */
@@ -142,29 +191,31 @@
     <h1>틱택토 (Tic-Tac-Toe)</h1>
     <div id="status">턴: 플레이어 X</div>
     
-    <div class="board" id="board">
-        <div class="cell" data-index="0"></div>
-        <div class="cell" data-index="1"></div>
-        <div class="cell" data-index="2"></div>
-        <div class="cell" data-index="3"></div>
-        <div class="cell" data-index="4"></div>
-        <div class="cell" data-index="5"></div>
-        <div class="cell" data-index="6"></div>
-        <div class="cell" data-index="7"></div>
-        <div class="cell" data-index="8"></div>
+    <div class="board-container">
+        <div class="winning-line" id="winningLine"></div>
+        <div class="board" id="board">
+            <div class="cell" data-index="0"></div>
+            <div class="cell" data-index="1"></div>
+            <div class="cell" data-index="2"></div>
+            <div class="cell" data-index="3"></div>
+            <div class="cell" data-index="4"></div>
+            <div class="cell" data-index="5"></div>
+            <div class="cell" data-index="6"></div>
+            <div class="cell" data-index="7"></div>
+            <div class="cell" data-index="8"></div>
+        </div>
     </div>
 
-    <!-- 하단 컨트롤 영역 (게임 초기화 및 메인으로 이동 버튼) -->
     <div class="controls">
         <button id="reset-btn" class="btn">게임 초기화</button>
         <a href="index.html" class="btn home-btn">메인으로</a>
     </div>
 
     <script>
-        const board = document.getElementById('board');
         const cells = document.querySelectorAll('.cell');
         const statusText = document.getElementById('status');
         const resetBtn = document.getElementById('reset-btn');
+        const winningLine = document.getElementById('winningLine');
 
         let currentPlayer = 'X';
         let gameState = ["", "", "", "", "", "", "", "", ""];
@@ -174,6 +225,18 @@
             [0, 1, 2], [3, 4, 5], [6, 7, 8], // 가로
             [0, 3, 6], [1, 4, 7], [2, 5, 8], // 세로
             [0, 4, 8], [2, 4, 6]             // 대각선
+        ];
+
+        // 승리 선의 위치 및 각도 데이터 (보드 패딩/격자 기준)
+        const lineStyles = [
+            { width: '310px', height: '8px', top: '62px', left: '22px', transform: 'none' },              // 가로 상단
+            { width: '310px', height: '8px', top: '174px', left: '22px', transform: 'none' },             // 가로 중단
+            { width: '310px', height: '8px', top: '286px', left: '22px', transform: 'none' },             // 가로 하단
+            { width: '8px', height: '310px', top: '22px', left: '62px', transform: 'none' },              // 세로 좌측
+            { width: '8px', height: '310px', top: '22px', left: '174px', transform: 'none' },             // 세로 중앙
+            { width: '8px', height: '310px', top: '22px', left: '286px', transform: 'none' },             // 세로 우측
+            { width: '420px', height: '8px', top: '174px', left: '-33px', transform: 'rotate(45deg)' },   // 대각선 ↘
+            { width: '420px', height: '8px', top: '174px', left: '-33px', transform: 'rotate(-45deg)' }   // 대각선 ↗
         ];
 
         function handleCellClick(e) {
@@ -193,18 +256,33 @@
 
         function checkResult() {
             let roundWon = false;
+            let winConditionIndex = -1;
 
             for (let i = 0; i < winningConditions.length; i++) {
                 const [a, b, c] = winningConditions[i];
                 if (gameState[a] && gameState[a] === gameState[b] && gameState[a] === gameState[c]) {
                     roundWon = true;
+                    winConditionIndex = i;
                     break;
                 }
             }
 
             if (roundWon) {
-                statusText.textContent = `축하합니다! 플레이어 ${currentPlayer}의 승리!`;
+                statusText.textContent = `🎉 승리! 플레이어 ${currentPlayer} WIN! 🎉`;
+                statusText.classList.add('win');
                 isGameActive = false;
+
+                // 1. 승리한 셀 하이라이트
+                const [a, b, c] = winningConditions[winConditionIndex];
+                cells[a].classList.add('winning-cell');
+                cells[b].classList.add('winning-cell');
+                cells[c].classList.add('winning-cell');
+
+                // 2. 승리 선 보이기
+                drawWinningLine(winConditionIndex);
+
+                // 3. 폭죽 효과 실행
+                triggerConfetti();
                 return;
             }
 
@@ -218,14 +296,47 @@
             statusText.textContent = `턴: 플레이어 ${currentPlayer}`;
         }
 
+        function drawWinningLine(index) {
+            const style = lineStyles[index];
+            winningLine.style.width = style.width;
+            winningLine.style.height = style.height;
+            winningLine.style.top = style.top;
+            winningLine.style.left = style.left;
+            winningLine.style.transform = style.transform;
+            winningLine.style.backgroundColor = currentPlayer === 'X' ? '#ff4d4f' : '#1890ff';
+            winningLine.style.display = 'block';
+        }
+
+        // 폭죽 파티클 생성 함수
+        function triggerConfetti() {
+            const colors = ['#ff4d4f', '#1890ff', '#ffec3d', '#52c41a', '#722ed1'];
+            for (let i = 0; i < 60; i++) {
+                const confetti = document.createElement('div');
+                confetti.classList.add('confetti');
+                confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+                confetti.style.left = '50vw';
+                confetti.style.top = '40vh';
+                
+                const dx = (Math.random() - 0.5) * 600 + 'px';
+                confetti.style.setProperty('--dx', dx);
+                
+                document.body.appendChild(confetti);
+
+                setTimeout(() => confetti.remove(), 2500);
+            }
+        }
+
         function resetGame() {
             currentPlayer = 'X';
             gameState = ["", "", "", "", "", "", "", "", ""];
             isGameActive = true;
             statusText.textContent = `턴: 플레이어 ${currentPlayer}`;
+            statusText.classList.remove('win');
+            winningLine.style.display = 'none';
+
             cells.forEach(cell => {
                 cell.textContent = "";
-                cell.classList.remove('X', 'O');
+                cell.classList.remove('X', 'O', 'winning-cell');
             });
         }
 
