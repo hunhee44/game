@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>간단한 틱택토 게임</title>
+    <title>2인용 틱택토 게임</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -95,7 +95,7 @@
         let gameState = ["", "", "", "", "", "", "", "", ""];
         let isGameActive = true;
 
-        // 승리 조건 배열 (가로, 세로, 대각선 인덱스 조합)
+        // 승리 조건 배열 (3목이 완성되는 모든 경우의 수의 인덱스)
         const winningConditions = [, [3, 4, 5], [6, 7, 8], // 가로, [1, 4, 7], [2, 5, 8], // 세로, [2, 4, 6]             // 대각선
         ];
 
@@ -142,7 +142,7 @@
                 return;
             }
 
-            // 턴 전환
+            // 정상적으로 턴 전환 (X였으면 O로, O였으면 X로)
             currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
             statusText.textContent = `턴: 플레이어 ${currentPlayer}`;
         }
