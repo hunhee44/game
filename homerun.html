@@ -284,6 +284,7 @@
 
         let isPitching = false;
         let isSwung = false;
+        let isProcessing = false; // 중복 클릭 방지 락 변수
         let animFrameId = null;
 
         let ballY = 70;
@@ -302,6 +303,8 @@
         }
 
         function handleActionButton() {
+            if (isProcessing) return; // 처리 중일 때 클릭 무시
+
             if (!isPitching) {
                 pitch();
             } else if (!isSwung) {
@@ -310,8 +313,15 @@
         }
 
         function pitch() {
+            if (isPitching) return;
+
             isPitching = true;
             isSwung = false;
+            isProcessing = true; // 투구 직후 클릭 락 설정
+
+            if (animFrameId) {
+                cancelAnimationFrame(animFrameId);
+            }
 
             setButtonMode('swing');
 
@@ -327,6 +337,12 @@
             setTimeout(() => pitcher.style.transform = 'scale(1)', 200);
 
             statusText.textContent = "타격 준비! 타이밍 맞춰 버튼 터치!";
+
+            // 연타 방지를 위한 짧은 대기 후 락 해제
+            setTimeout(() => {
+                isProcessing = false;
+            }, 50);
+
             animateBall();
         }
 
@@ -356,9 +372,11 @@
         }
 
         function swing() {
-            isSwung = true;
+            if (!isPitching || isSwung) return;
 
-            // 시원한 풀스윙 모션
+            isSwung = true;
+            isProcessing = true; // 스윙 판정 중 연타 방지
+
             batter.style.transform = "rotate(-95deg) scale(1.15)";
             setTimeout(() => batter.style.transform = "rotate(0deg) scale(1)", 300);
 
@@ -408,6 +426,8 @@
 
         function endPitch() {
             isPitching = false;
+            isSwung = false;
+            isProcessing = false;
             setButtonMode('pitch');
         }
 
@@ -423,6 +443,7 @@
             outs = 0;
             isPitching = false;
             isSwung = false;
+            isProcessing = false;
             cancelAnimationFrame(animFrameId);
             ball.style.display = 'none';
             setButtonMode('pitch');
