@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Up & Down</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #74b9ff, #a29bfe);
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            margin: 0;
+        }
+        .game-container {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            text-align: center;
+            width: 320px;
+        }
+        h2 { color: #2d3436; margin-bottom: 10px; }
+        p { color: #636e72; font-size: 14px; margin-bottom: 20px; }
+        input {
+            width: 80%;
+            padding: 10px;
+            font-size: 16px;
+            border: 2px solid #dfe6e9;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            text-align: center;
+            outline: none;
+        }
+        input:focus {
+            border-color: #0984e3;
+        }
+        
+        /* 버튼 공통 스타일 */
+        .btn {
+            background-color: #0984e3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+        .btn:hover { background-color: #74b9ff; }
+
+        #submit-btn {
+            width: 88%;
+            margin-bottom: 10px;
+        }
+
+        /* 하단 컨트롤 영역 (초기화 및 메인으로) */
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            justify-content: center;
+        }
+
+        #reset-btn {
+            background-color: #00b894;
+        }
+        #reset-btn:hover {
+            background-color: #55efc4;
+        }
+
+        .home-btn {
+            background-color: #636e72;
+        }
+        .home-btn:hover {
+            background-color: #b2bec3;
+        }
+
+        #result {
+            margin-top: 20px;
+            font-weight: bold;
+            font-size: 16px;
+            min-height: 24px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        <h2>🎲 Up & Down 게임</h2>
+        <p id="desc">1부터 100 사이의 숫자를 맞춰보세요!<br>(남은 기회: 6번)</p>
+        
+        <input type="number" id="userGuess" min="1" max="100" placeholder="숫자 입력">
+        <br>
+        <button id="submit-btn" class="btn" onclick="checkGuess()">확인하기</button>
+        
+        <div id="result"></div>
+
+        <!-- 하단 컨트롤 영역 (게임 초기화 및 메인으로 이동) -->
+        <div class="controls">
+            <button id="reset-btn" class="btn" onclick="resetGame()">다시하기</button>
+            <a href="index.html" class="btn home-btn">메인으로</a>
+        </div>
+    </div>
+
+    <script>
+        let randomNumber = Math.floor(Math.random() * 100) + 1;
+        let attemptsLeft = 6;
+        let isGameActive = true;
+
+        const resultDiv = document.getElementById('result');
+        const userGuessInput = document.getElementById('userGuess');
+        const submitBtn = document.getElementById('submit-btn');
+        const descText = document.getElementById('desc');
+
+        function checkGuess() {
+            if (!isGameActive) return;
+
+            const userGuess = Number(userGuessInput.value);
+
+            if (!userGuess || userGuess < 1 || userGuess > 100) {
+                resultDiv.style.color = '#e17055';
+                resultDiv.innerText = "1부터 100 사이의 숫자를 입력해주세요!";
+                return;
+            }
+
+            attemptsLeft--;
+
+            if (userGuess === randomNumber) {
+                resultDiv.style.color = '#00b894';
+                resultDiv.innerText = `🎉 정답 (${6 - attemptsLeft}번 만에 정답)`;
+                endGame();
+            } else if (attemptsLeft === 0) {
+                resultDiv.style.color = '#d63031';
+                resultDiv.innerText = `💥기회를 다 소진했습니다! (정답: ${randomNumber})`;
+                endGame();
+            } else if (userGuess < randomNumber) {
+                resultDiv.style.color = '#0984e3';
+                resultDiv.innerText = `📈 UP!(남은기회: ${attemptsLeft}번)`;
+            } else {
+                resultDiv.style.color = '#e84393';
+                resultDiv.innerText = `📉 DOWN!(남은기회: ${attemptsLeft}번)`;
+            }
+            
+            userGuessInput.value = '';
+            userGuessInput.focus();
+        }
+
+        function endGame() {
+            isGameActive = false;
+            submitBtn.style.opacity = '0.5';
+            submitBtn.style.cursor = 'not-allowed';
+            userGuessInput.disabled = true;
+        }
+
+        function resetGame() {
+            randomNumber = Math.floor(Math.random() * 100) + 1;
+            attemptsLeft = 6;
+            isGameActive = true;
+            resultDiv.innerText = '';
+            userGuessInput.disabled = false;
+            userGuessInput.value = '';
+            submitBtn.style.opacity = '1';
+            submitBtn.style.cursor = 'pointer';
+            descText.innerHTML = "1부터 100 사이의 숫자를 맞춰보세요!<br>(남은 기회: 6번)";
+            userGuessInput.focus();
+        }
+
+        // 엔터키 입력 지원
+        userGuessInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                checkGuess();
+            }
+        });
+    </script>
+
+</body>
+</html>
